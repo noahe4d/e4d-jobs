@@ -1,0 +1,233 @@
+<title>Tester Claude Learn Parts</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a workshop part tag on top, the 3D model under it, then the wall elevation and the cabinet's part list. One column. */
+:root{
+  --bg:#eceeea; --panel:#ffffff; --ink:#1c2220; --muted:#5d6763; --line:#cfd4cf;
+  --hi:#e8590c; --hi-ink:#ffffff; --oak:#c8a272; --clay:#a8968a; --carcass:#f3f2ec; --top:#8d8f8a; --scene:#e3e6e1;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151917; --panel:#1f2522; --ink:#e9ece8; --muted:#9aa49f; --line:#333b37;
+  --hi:#ff7a2e; --hi-ink:#1a0d04; --scene:#232a27; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151917; --panel:#1f2522; --ink:#e9ece8; --muted:#9aa49f; --line:#333b37;
+  --hi:#ff7a2e; --hi-ink:#1a0d04; --scene:#232a27; color-scheme:dark}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 40px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.job{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.tag{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--hi);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.tag .cab{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--hi)}
+.tag h1{font-family:var(--display);font-weight:700;font-size:34px;line-height:1.05;margin:0;text-wrap:balance}
+.tag .where{color:var(--muted);margin:0}
+.dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:6px}
+.dims div{display:flex;flex-direction:column}
+.dims span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.dims b{font-family:var(--mono);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+.note{font-size:14px;color:var(--muted);margin:0}
+.viewer{position:relative;background:var(--scene);border-radius:6px;overflow:hidden;border:1px solid var(--line);aspect-ratio:4/3.4;max-width:100%;max-height:70vh}
+#gl{width:100%;height:100%;display:block;touch-action:none}
+.seg{position:absolute;left:10px;top:10px;display:flex;background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{font:600 13px var(--body);border:0;background:none;color:var(--ink);padding:8px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+.hint{position:absolute;right:10px;bottom:8px;font-size:12px;color:var(--muted)}
+h2{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.04em;text-transform:uppercase;margin:6px 0 0}
+.elev{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;overflow-x:auto}
+.elev svg{display:block;width:100%;height:auto;min-width:520px}
+.parts{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.parts a{display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 14px;color:var(--ink);text-decoration:none;border-top:1px solid var(--line)}
+.parts a:first-child{border-top:0}
+.parts a[aria-current="true"]{background:var(--hi);color:var(--hi-ink)}
+.parts small{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums;opacity:.8}
+.pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pick label{font-size:13px;color:var(--muted)}
+.pick select{font:500 15px var(--body);padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);max-width:100%;min-width:0;flex:1}
+</style>
+
+<div class="wrap">
+  <div class="job"><span id="jobname"></span><span id="roomname"></span></div>
+  <section class="tag" id="tag" aria-live="polite"></section>
+  <div class="viewer">
+    <canvas id="gl" aria-label="3D model of the room with the scanned part in orange"></canvas>
+    <div class="seg" role="group" aria-label="View">
+      <button id="vPart" aria-pressed="true">This cabinet</button>
+      <button id="vRoom" aria-pressed="false">Whole wall</button>
+    </div>
+    <div class="hint">Drag to turn · pinch to zoom</div>
+  </div>
+  <h2>Where it goes on the wall</h2>
+  <div class="elev" id="elev"></div>
+  <h2 id="plistTitle">Parts in this cabinet</h2>
+  <div class="parts" id="plist"></div>
+  <div class="pick"><label for="cabSel">Other cabinet</label><select id="cabSel"></select></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const DATA = __DATA__;
+const $ = s => document.querySelector(s);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+$('#jobname').textContent = DATA.job; $('#roomname').textContent = 'Room: ' + DATA.room;
+
+const byKey = {}; DATA.products.forEach(p => p.parts.forEach(x => byKey[x.k] = {p, x}));
+const prodName = p => p.notes ? `${p.name} (${p.notes})` : p.name;
+const isFace = x => ['DOOR','FEND','TOE','DOORPANEL','DRAWERFRONT','TOESKIN'].includes(x.type.toUpperCase()) || /end panel|kick/i.test(x.name);
+function prodColour(p){
+  if (/benchtop/i.test(p.notes)) return css('--top');
+  if (/^Wall/.test(p.name)) return css('--clay');
+  return css('--oak');
+}
+
+/* ---------- 3D ---------- */
+const canvas = $('#gl');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35, 1, 10, 60000);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a80, 0.85));
+const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-2000, 4000, 5000); scene.add(sun);
+
+function partGeometry(x){
+  let g;
+  if (x.shape && x.shape.length >= 3 && !x.rad){
+    const s = new THREE.Shape(x.shape.map(([a,b]) => new THREE.Vector2(a,b)));
+    g = new THREE.ExtrudeGeometry(s, {depth:x.T, bevelEnabled:false});
+  } else {
+    const segs = x.rad ? 24 : 1;
+    g = new THREE.BoxGeometry(x.L, x.W, x.T, 1, segs, 1);
+    g.translate(x.L/2, x.W/2, x.T/2);
+    if (x.rad){
+      const R = x.rad, pos = g.attributes.position;
+      for (let i=0;i<pos.count;i++){
+        const y = pos.getY(i), z = pos.getZ(i), f = y / R, r = R - z;
+        pos.setY(i, r*Math.sin(f)); pos.setZ(i, R - r*Math.cos(f));
+      }
+      g.computeVertexNormals();
+    }
+  }
+  return g;
+}
+const meshes = [];
+DATA.products.forEach(p => p.parts.forEach(x => {
+  if (x.cutOnly) return;
+  const g = partGeometry(x);
+  const mat = new THREE.MeshLambertMaterial({color:0xffffff, transparent:true});
+  const m = new THREE.Mesh(g, mat);
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), new THREE.LineBasicMaterial({color:0x000000, transparent:true}));
+  m.add(e);
+  const M = x.m, P = x.p, T = new THREE.Matrix4();
+  T.set(M[0],M[3],M[6],P[0], M[1],M[4],M[7],P[1], M[2],M[5],M[8],P[2], 0,0,0,1);
+  m.matrixAutoUpdate = false; m.matrix.copy(T);
+  m.userData = {p, x, edge:e}; scene.add(m); meshes.push(m);
+}));
+
+let state = {key:null, view:'part'};
+function targets(sel){
+  if (!sel) return [];
+  const {p, x} = sel;
+  if (x.cutOnly) return meshes.filter(m => m.userData.p === p && m.userData.x.view && m.userData.x.name.startsWith(x.name));
+  return meshes.filter(m => m.userData.x === x);
+}
+function paint(){
+  const sel = state.key && byKey[state.key];
+  const hot = new Set(targets(sel));
+  const hi = new THREE.Color(css('--hi')), carcass = new THREE.Color(css('--carcass'));
+  meshes.forEach(m => {
+    const {p, x, edge} = m.userData, mine = sel && p === sel.p;
+    const c = hot.has(m) ? hi : (isFace(x) ? new THREE.Color(prodColour(p)) : carcass);
+    m.material.color.copy(c);
+    const dim = sel && !mine && !hot.has(m);
+    m.material.opacity = hot.has(m) ? 1 : (dim ? 0.18 : (sel ? 0.38 : 1));
+    m.material.depthWrite = m.material.opacity === 1;
+    m.renderOrder = hot.has(m) ? 2 : 0;
+    edge.material.opacity = hot.has(m) ? 0.9 : (dim ? 0.06 : 0.35);
+  });
+}
+function frame(){
+  const sel = state.key && byKey[state.key];
+  const box = new THREE.Box3();
+  const list = (state.view === 'part' && sel) ? meshes.filter(m => m.userData.p === sel.p) : meshes;
+  list.forEach(m => { m.geometry.computeBoundingBox(); box.union(m.geometry.boundingBox.clone().applyMatrix4(m.matrix)); });
+  const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
+  const r = Math.max(s.x, s.y, s.z) * 0.62 + 150;
+  const d = r / Math.tan(THREE.MathUtils.degToRad(camera.fov/2)) * (camera.aspect < 1 ? 1/camera.aspect : 1) * 0.95;
+  const dir = new THREE.Vector3(-0.42, 0.32, 1).normalize();
+  camera.position.copy(c).addScaledVector(dir, d);
+  controls.target.copy(c); controls.update();
+}
+function resize(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(() => { resize(); }).observe(canvas);
+(function loop(){ controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); })();
+
+/* ---------- elevation ---------- */
+function elevation(sel){
+  const W = 6685, H = 2700, pad = 60;
+  const items = DATA.products.slice().sort((a,b) => (a.D - b.D));
+  let s = `<svg viewBox="${-pad} ${-pad} ${W+2*pad} ${H+2*pad+120}" role="img" aria-label="Wall elevation">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" style="fill:none;stroke:var(--line)" stroke-width="8"/>`;
+  items.forEach(p => {
+    const y = H - p.Elev - p.H, mine = sel && sel.p === p;
+    const fill = mine ? 'var(--hi)' : (/benchtop/i.test(p.notes) ? 'var(--top)' : (/^Wall/.test(p.name) ? 'var(--clay)' : 'var(--oak)'));
+    s += `<rect x="${p.X}" y="${y}" width="${p.W}" height="${p.H}" style="fill:${fill};stroke:var(--ink)" fill-opacity="${mine?1:.45}" stroke-opacity=".5" stroke-width="5"/>`;
+    if (p.numbered && p.H > 200 && p.W > 200) s += `<text x="${p.X+p.W/2}" y="${y+p.H/2}" font-size="110" text-anchor="middle" dominant-baseline="middle" style="fill:var(--ink)" font-family="JetBrains Mono, monospace">${p.cab}</text>`;
+  });
+  s += `<line x1="0" y1="${H}" x2="${W}" y2="${H}" style="stroke:var(--ink)" stroke-width="10"/>`;
+  if (sel){ const p = sel.p;
+    s += `<text x="${Math.min(Math.max(p.X+p.W/2,500),W-500)}" y="${H+100}" font-size="90" text-anchor="middle" style="fill:var(--ink)" font-family="JetBrains Mono, monospace">${p.X} from left wall · ${p.W} wide</text>`; }
+  return s + `</svg>`;
+}
+
+/* ---------- page ---------- */
+const fmt = n => Math.round(n*10)/10;
+function show(key){
+  state.key = byKey[key] ? key : null;
+  const sel = state.key && byKey[state.key];
+  const tag = $('#tag');
+  if (sel){
+    const {p, x} = sel;
+    tag.innerHTML = `<div class="cab">${p.label} · ${p.name}</div>
+      <h1>${x.name}</h1>
+      <p class="where">${p.notes ? p.notes + ' · ' : ''}${p.X} mm from the left wall${p.Elev ? ', ' + p.Elev + ' mm off the floor' : ''}</p>
+      <div class="dims">
+        <div><span>Length</span><b>${fmt(x.L)}</b></div>
+        <div><span>Width</span><b>${fmt(x.W)}</b></div>
+        <div><span>Thick</span><b>${x.T}</b></div>
+        <div><span>Cabinet W×H×D</span><b>${fmt(p.W)}×${fmt(p.H)}×${fmt(p.D)}</b></div>
+      </div>
+      ${x.comment ? `<p class="note">${x.comment}</p>` : ''}`;
+  } else {
+    tag.innerHTML = `<div class="cab">No part picked</div><h1>Scan a sticker, or pick a cabinet below</h1>
+      <p class="where">The part shows up in orange in the model and on the wall drawing.</p>`;
+  }
+  $('#elev').innerHTML = elevation(sel);
+  if (sel){ const e = $('#elev'), sc = e.scrollWidth / 6805; e.scrollLeft = Math.max(0, (sel.p.X + sel.p.W/2 + 60) * sc - e.clientWidth/2); }
+  const p = sel ? sel.p : null;
+  $('#plistTitle').hidden = $('#plist').hidden = !p;
+  if (p) $('#plist').innerHTML = p.parts.filter(x => !x.view).map(x =>
+    `<a href="#${x.k}" data-k="${x.k}" aria-current="${x.k===state.key}"><span>${x.name}</span><small>${fmt(x.L)} × ${fmt(x.W)} × ${x.T}</small></a>`).join('');
+  $('#cabSel').value = p ? String(p.id) : '';
+  paint(); frame();
+}
+$('#plist').addEventListener('click', e => { const a = e.target.closest('a'); if (!a) return; e.preventDefault(); show(a.dataset.k); });
+$('#cabSel').innerHTML = '<option value="">Choose…</option>' + DATA.products.map(p => `<option value="${p.id}">${p.label} · ${prodName(p)}</option>`).join('');
+$('#cabSel').addEventListener('change', e => { const p = DATA.products.find(q => String(q.id) === e.target.value); if (p) show(p.parts.find(x => !x.view).k); });
+function setView(v){ state.view = v; $('#vPart').setAttribute('aria-pressed', v==='part'); $('#vRoom').setAttribute('aria-pressed', v==='room'); frame(); }
+$('#vPart').onclick = () => setView('part'); $('#vRoom').onclick = () => setView('room');
+window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => show(state.key));
+resize(); show(location.hash.slice(1));
+</script>
