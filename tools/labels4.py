@@ -102,8 +102,8 @@ for i,(mat,r,P,km,sw,sl,si,s,l) in enumerate(rows,1):
     lw=f"L= {fmt(float(a['Length']))} | W= {fmt(float(a['Width']))}"; c.setFont('Helvetica-Bold',fit(lw,'Helvetica-Bold',10,45*mm)); c.drawRightString(W-6*mm,H-25*mm,lw)
     eds=edges(op); bn=band_names(op.find('BandMatTmpSel').get('MissingTemplateName','') if op.find('BandMatTmpSel') is not None else '')
     if eds:
-        codes=sorted({n for n,*_ in eds}); sides=', '.join(f"{side or '?'}" for n,a,b,side in eds)
-        et=f"Edge: {len(eds)} side{'s' if len(eds)>1 else ''} ({sides}) " + ' '.join(f"E{n} {bn.get(n,'')}" for n in codes)
+        codes=sorted({n for n,*_ in eds}); sides=', '.join(side for n,a,b,side in eds if side)
+        et=f"Edge: {len(eds)} side{'s' if len(eds)>1 else ''}" + (f" ({sides})" if sides else '') + ' ' + ' '.join(f"E{n} {bn.get(n,'')}" for n in codes)
     else: et='Edge: none'
     c.setFont('Helvetica-Bold',fit(et,'Helvetica-Bold',7.5,46*mm)); c.drawRightString(W-6*mm,H-30*mm,et)
     job=f"Job: {d['job']}"; c.setFont('Helvetica-Bold',fit(job,'Helvetica-Bold',9,50*mm)); c.drawString(5*mm,H-22*mm,job)
