@@ -69,10 +69,13 @@ def sheet_drawing(sheet,P,me_loc,sw,sl,bx,by,bw,bh):
 import re as _re
 _mt=open('/mnt/user-data/uploads/Data/MaterialTemplates.dat',encoding='utf-8',errors='replace').read()
 def band_names(tname):
-    i=_mt.find(f'<MaterialTemplate Name="{tname}"'); out={}
+    out={}
+    i=_mt.find(f'<MaterialTemplate Name="{tname}"')
+    if i<0: i=_mt.find(f'<MaterialTemplate DisplayName="{tname}"')
     if i<0: return out
     blk=_mt[i:_mt.find('</MaterialTemplate>',i)]
     for pt,mat in _re.findall(r'PartType="EdgeBand(\d?)" Mat="([^"]*)"',blk): out[int(pt or 1)]=mat
+    for pt,mat in _re.findall(r'PartType="EdgeBand(\d?)"[^>]*?MissingMatName="([^"]*)"',blk): out.setdefault(int(pt or 1),mat)
     return out
 def edges(op):
     sh=op.find('Shape'); pts=list(sh.iter('ShapePoint')) if sh is not None else []

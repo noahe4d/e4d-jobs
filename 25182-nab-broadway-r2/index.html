@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>25182 NAB Broadway wall panels R2</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a workshop part tag on top, the 3D model under it, then the wall elevation and the cabinet's part list. One column. */
+:root{
+  --bg:#eceeea; --panel:#ffffff; --ink:#1c2220; --muted:#5d6763; --line:#cfd4cf;
+  --hi:#e8590c; --hi-ink:#ffffff; --oak:#c8a272; --clay:#a8968a; --carcass:#f3f2ec; --top:#8d8f8a; --scene:#e3e6e1;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151917; --panel:#1f2522; --ink:#e9ece8; --muted:#9aa49f; --line:#333b37;
+  --hi:#ff7a2e; --hi-ink:#1a0d04; --scene:#232a27; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#151917; --panel:#1f2522; --ink:#e9ece8; --muted:#9aa49f; --line:#333b37;
+  --hi:#ff7a2e; --hi-ink:#1a0d04; --scene:#232a27; color-scheme:dark}
+html,body{background:var(--bg);color:var(--ink)}
+body{margin:0;font-family:var(--body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 40px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.job{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.tag{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--hi);border-radius:6px;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
+.tag .cab{font-family:var(--display);font-weight:700;font-size:15px;letter-spacing:.08em;text-transform:uppercase;color:var(--hi)}
+.tag h1{font-family:var(--display);font-weight:700;font-size:34px;line-height:1.05;margin:0;text-wrap:balance}
+.tag .where{color:var(--muted);margin:0}
+.dims{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-top:6px}
+.dims div{display:flex;flex-direction:column}
+.dims span{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.dims b{font-family:var(--mono);font-weight:600;font-size:15px;font-variant-numeric:tabular-nums}
+.note{font-size:14px;color:var(--muted);margin:0}
+.viewer{position:relative;background:var(--scene);border-radius:6px;overflow:hidden;border:1px solid var(--line);aspect-ratio:4/3.4;max-width:100%;max-height:70vh}
+#gl{width:100%;height:100%;display:block;touch-action:none}
+.seg{position:absolute;left:10px;top:10px;display:flex;background:var(--panel);border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg button{font:600 13px var(--body);border:0;background:none;color:var(--ink);padding:8px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+button:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+.hint{position:absolute;right:10px;bottom:8px;font-size:12px;color:var(--muted)}
+h2{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.04em;text-transform:uppercase;margin:6px 0 0}
+.elev{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:10px;overflow-x:auto}
+.elev svg{display:block;width:100%;height:auto;min-width:520px}
+.parts{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.parts a{display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 14px;color:var(--ink);text-decoration:none;border-top:1px solid var(--line)}
+.parts a:first-child{border-top:0}
+.parts a[aria-current="true"]{background:var(--hi);color:var(--hi-ink)}
+.parts small{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums;opacity:.8}
+.pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.pick label{font-size:13px;color:var(--muted)}
+.pick select{font:500 15px var(--body);padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);max-width:100%;min-width:0;flex:1}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="job"><span id="jobname"></span><span id="roomname"></span></div>
+  <section class="tag" id="tag" aria-live="polite"></section>
+  <div class="viewer">
+    <canvas id="gl" aria-label="3D model of the room with the scanned part in orange"></canvas>
+    <div class="seg" role="group" aria-label="View">
+      <button id="vPart" aria-pressed="true">This cabinet</button>
+      <button id="vRoom" aria-pressed="false">Whole wall</button>
+    </div>
+    <div class="hint">Drag to turn · pinch to zoom</div>
+  </div>
+  <h2>Where it goes on the wall</h2>
+  <div class="elev" id="elev"></div>
+  <h2 id="plistTitle">Parts in this cabinet</h2>
+  <div class="parts" id="plist"></div>
+  <div class="pick"><label for="cabSel">Other cabinet</label><select id="cabSel"></select></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const DATA = {"job":"25182 NAB Broadway wall panels R2","rooms":[{"n":1,"name":"NAB ATM Bunker panels","wallLen":493.0,"wallH":2993.0,"products":[{"id":1,"cab":"2","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"D.01 door panel 493 (WF05 laminate per Jordan) BOTTOM 493w x 1615h @80 AFF. WF05 18mm Natural Oak Ravine, vertical grain, 1mm ABS to match 4 edges","W":487.0,"H":1615.0,"D":18.0,"X":3.0,"Elev":80.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1615.0,"W":487.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1615.0,0.0],[1615.0,487.0],[0.0,487.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[490.0,80.0,14.0],"k":"r1c1-p1"}],"room":1,"mz":"R1N2","label":"Cab R1N2"},{"id":2,"cab":"1","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"D.01 door panel 493 (WF05 laminate per Jordan) TOP 493w x 1268h @1705 AFF. 10 shadow line below","W":487.0,"H":1288.0,"D":18.0,"X":3.0,"Elev":1705.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1288.0,"W":487.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1288.0,0.0],[1288.0,487.0],[0.0,487.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[490.0,1705.0,14.0],"k":"r1c2-p1"}],"room":1,"mz":"R1N1","label":"Cab R1N1"},{"id":3,"cab":"4","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"260 COS return (250 = 260 less 10 shadow to door) BOTTOM 250w x 1615h @80 AFF. WF05 18mm Natural Oak Ravine, vertical grain, 1mm ABS to match 4 edges","W":280.0,"H":1615.0,"D":18.0,"X":0.0,"Elev":80.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1615.0,"W":280.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1615.0,0.0],[1615.0,280.0],[0.0,280.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[280.0,80.0,14.0],"k":"r1c3-p1"}],"room":1,"mz":"R1N4","label":"Cab R1N4"},{"id":4,"cab":"3","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"260 COS return (250 = 260 less 10 shadow to door) TOP 250w x 1373h @1705 AFF. 10 shadow line below","W":280.0,"H":1373.0,"D":18.0,"X":0.0,"Elev":1705.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1373.0,"W":280.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1373.0,0.0],[1373.0,280.0],[0.0,280.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[280.0,1705.0,14.0],"k":"r1c4-p1"}],"room":1,"mz":"R1N3","label":"Cab R1N3"},{"id":5,"cab":"6","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"ATM wall panel 1 (995 COS + 183 site = 1178) BOTTOM 1178w x 1615h @80 AFF. WF05 18mm Natural Oak Ravine, vertical grain, 1mm ABS to match 4 edges","W":1200.0,"H":1615.0,"D":18.0,"X":-2.021,"Elev":80.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1615.0,"W":1200.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1615.0,0.0],[1615.0,1200.0],[0.0,1200.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[1197.98,80.0,14.0],"k":"r1c5-p1"}],"room":1,"mz":"R1N6","label":"Cab R1N6"},{"id":6,"cab":"5","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"ATM wall panel 1 (995 COS + 183 site = 1178) TOP 1178w x 1365h @1705 AFF. 10 shadow line below | CUTOUT to add: DN200 #1 (x 770-1340 from wall start, 660-1850 AFF)","W":1200.0,"H":1365.0,"D":18.0,"X":-2.021,"Elev":1705.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1365.0,"W":1200.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1365.0,0.0],[1365.0,1200.0],[0.0,1200.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[1197.98,1705.0,14.0],"k":"r1c6-p1"}],"room":1,"mz":"R1N5","label":"Cab R1N5"},{"id":7,"cab":"8","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"ATM wall panel 2 BOTTOM 1200w x 1615h @80 AFF. WF05 18mm Natural Oak Ravine, vertical grain, 1mm ABS to match 4 edges","W":1200.0,"H":1615.0,"D":18.0,"X":1207.979,"Elev":80.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1615.0,"W":1200.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1615.0,0.0],[1615.0,1200.0],[0.0,1200.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[2407.98,80.0,14.0],"k":"r1c7-p1"}],"room":1,"mz":"R1N8","label":"Cab R1N8"},{"id":8,"cab":"7","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"ATM wall panel 2 TOP 1200w x 1365h @1705 AFF. 10 shadow line below | CUTOUTS to add: DN200 #1 (1188-1340) + DN200 #2 (1920-2388), 660-1850 AFF","W":1200.0,"H":1365.0,"D":18.0,"X":1207.979,"Elev":1705.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1365.0,"W":1200.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1365.0,0.0],[1365.0,1200.0],[0.0,1200.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[2407.98,1705.0,14.0],"k":"r1c8-p1"}],"room":1,"mz":"R1N7","label":"Cab R1N7"},{"id":9,"cab":"10","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"ATM wall panel 3 BOTTOM 1200w x 1615h @80 AFF. WF05 18mm Natural Oak Ravine, vertical grain, 1mm ABS to match 4 edges","W":1200.0,"H":1615.0,"D":18.0,"X":2417.979,"Elev":80.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1615.0,"W":1200.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1615.0,0.0],[1615.0,1200.0],[0.0,1200.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[3617.98,80.0,14.0],"k":"r1c9-p1"}],"room":1,"mz":"R1N10","label":"Cab R1N10"},{"id":10,"cab":"9","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"ATM wall panel 3 TOP 1200w x 1365h @1705 AFF. 10 shadow line below | CUTOUTS to add: DN200 #2 (2398-2500) 660-1850 AFF + COMBI (3030-3598) 650-1550 AFF","W":1200.0,"H":1365.0,"D":18.0,"X":2417.979,"Elev":1705.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1365.0,"W":1200.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1365.0,0.0],[1365.0,1200.0],[0.0,1200.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[3617.98,1705.0,14.0],"k":"r1c10-p1"}],"room":1,"mz":"R1N9","label":"Cab R1N9"},{"id":11,"cab":"12","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"ATM wall panel 4 BOTTOM 1200w x 1615h @80 AFF. WF05 18mm Natural Oak Ravine, vertical grain, 1mm ABS to match 4 edges","W":1200.0,"H":1615.0,"D":18.0,"X":3627.979,"Elev":80.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1615.0,"W":1200.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1615.0,0.0],[1615.0,1200.0],[0.0,1200.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[4827.98,80.0,14.0],"k":"r1c11-p1"}],"room":1,"mz":"R1N12","label":"Cab R1N12"},{"id":12,"cab":"11","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"ATM wall panel 4 TOP 1200w x 1365h @1705 AFF. 10 shadow line below | CUTOUT to add: COMBI (3608-3880) 650-1550 AFF","W":1200.0,"H":1365.0,"D":18.0,"X":3627.979,"Elev":1705.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1365.0,"W":1200.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1365.0,0.0],[1365.0,1200.0],[0.0,1200.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[4827.98,1705.0,14.0],"k":"r1c12-p1"}],"room":1,"mz":"R1N11","label":"Cab R1N11"},{"id":13,"cab":"14","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"ATM wall panel 5 BOTTOM 1200w x 1615h @80 AFF. WF05 18mm Natural Oak Ravine, vertical grain, 1mm ABS to match 4 edges","W":1200.0,"H":1615.0,"D":18.0,"X":4837.979,"Elev":80.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1615.0,"W":1200.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1615.0,0.0],[1615.0,1200.0],[0.0,1200.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[6037.98,80.0,14.0],"k":"r1c13-p1"}],"room":1,"mz":"R1N14","label":"Cab R1N14"},{"id":14,"cab":"13","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"ATM wall panel 5 TOP - L-SHAPE 1200w x 2400h @1705 AFF (top 4105): 245 strip at the angled-wall end runs full height to 20 below the 4125 ceiling, the other 955 is cut down to 1365 high (top 3070, 20 below 3090 ceiling). WF05 18mm Natural Oak Ravine, vertical grain, all edges incl. step banded. Do not resize in Mozaik - it wipes the shape.","W":1200.0,"H":2400.0,"D":18.0,"X":4837.979,"Elev":1705.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":2400.0,"W":1200.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[2400.0,0.0],[2400.0,245.0],[1365.0,245.0],[1365.0,1200.0],[0.0,1200.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[6037.98,1705.0,14.0],"k":"r1c14-p1"}],"room":1,"mz":"R1N13","label":"Cab R1N13"},{"id":15,"cab":"16","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"Angled wall panel 1 BOTTOM 801w x 1615h @80 AFF. WF05 18mm Natural Oak Ravine, vertical grain, 1mm ABS to match 4 edges","W":820.0,"H":1615.0,"D":18.0,"X":-29.0,"Elev":80.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1615.0,"W":820.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1615.0,0.0],[1615.0,820.0],[0.0,820.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[791.0,80.0,14.0],"k":"r1c15-p1"}],"room":1,"mz":"R1N16","label":"Cab R1N16"},{"id":16,"cab":"15","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"Angled wall panel 1 TOP 801w x 2400h @1705 AFF. 10 shadow line below","W":820.0,"H":2400.0,"D":18.0,"X":-29.0,"Elev":1705.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":2400.0,"W":820.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[2400.0,0.0],[2400.0,820.0],[0.0,820.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[791.0,1705.0,14.0],"k":"r1c16-p1"}],"room":1,"mz":"R1N15","label":"Cab R1N15"},{"id":17,"cab":"18","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"Angled wall panel 2 BOTTOM 801w x 1615h @80 AFF. WF05 18mm Natural Oak Ravine, vertical grain, 1mm ABS to match 4 edges","W":820.0,"H":1615.0,"D":18.0,"X":801.0,"Elev":80.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1615.0,"W":820.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1615.0,0.0],[1615.0,820.0],[0.0,820.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[1621.0,80.0,14.0],"k":"r1c17-p1"}],"room":1,"mz":"R1N18","label":"Cab R1N18"},{"id":18,"cab":"17","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"Angled wall panel 2 TOP 801w x 2400h @1705 AFF. 10 shadow line below","W":820.0,"H":2400.0,"D":18.0,"X":801.0,"Elev":1705.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":2400.0,"W":820.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[2400.0,0.0],[2400.0,820.0],[0.0,820.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[1621.0,1705.0,14.0],"k":"r1c18-p1"}],"room":1,"mz":"R1N17","label":"Cab R1N17"},{"id":19,"cab":"20","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"190 return BOTTOM 190w x 1615h @80 AFF. WF05 18mm Natural Oak Ravine, vertical grain, 1mm ABS to match 4 edges","W":230.0,"H":1615.0,"D":18.0,"X":-10.0,"Elev":80.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1615.0,"W":230.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1615.0,0.0],[1615.0,230.0],[0.0,230.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[220.0,80.0,14.0],"k":"r1c19-p1"}],"room":1,"mz":"R1N20","label":"Cab R1N20"},{"id":20,"cab":"19","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"190 return TOP 190w x 2400h @1705 AFF. 10 shadow line below","W":230.0,"H":2400.0,"D":18.0,"X":-10.0,"Elev":1705.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":2400.0,"W":230.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[2400.0,0.0],[2400.0,230.0],[0.0,230.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[220.0,1705.0,14.0],"k":"r1c20-p1"}],"room":1,"mz":"R1N19","label":"Cab R1N19"},{"id":21,"cab":"22","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"FHR wall panel BOTTOM 965w x 1615h @80 AFF. WF05 18mm Natural Oak Ravine, vertical grain, 1mm ABS to match 4 edges","W":995.0,"H":1615.0,"D":18.0,"X":-30.0,"Elev":80.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":1615.0,"W":995.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[1615.0,0.0],[1615.0,995.0],[0.0,995.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[965.0,80.0,14.0],"k":"r1c21-p1"}],"room":1,"mz":"R1N22","label":"Cab R1N22"},{"id":22,"cab":"21","numbered":false,"name":"Bar Back Door Panel 16mm","notes":"FHR wall panel TOP 965w x 2293h @1705 AFF. 10 shadow line below | SHAPE to add: L-shape, notch 530w x 525h out of TOP-RIGHT corner (right part top 3473 AFF). Check notch side on site","W":995.0,"H":2400.0,"D":18.0,"X":-30.0,"Elev":1705.0,"parts":[{"name":"Door","rep":"Door","type":"Door","view":false,"cutOnly":false,"q":1.0,"comment":"Cabinet Door","L":2400.0,"W":995.0,"T":18,"rad":0.0,"shape":[[0.0,0.0],[2400.0,0.0],[2400.0,995.0],[0.0,995.0]],"m":[0.0,1.0,-0.0,-1.0,0.0,-0.0,-0.0,0.0,1.0],"p":[965.0,1705.0,14.0],"k":"r1c22-p1"}],"room":1,"mz":"R1N21","label":"Cab R1N21"}]}]};
+const $ = s => document.querySelector(s);
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+$('#jobname').textContent = DATA.job;
+const ROOMS = {}; DATA.rooms.forEach(r => ROOMS[r.n] = r);
+DATA.products = DATA.rooms.flatMap(r => r.products.map(p => (p.uid = r.n + '-' + p.id, p)));
+
+const byKey = {}; DATA.products.forEach(p => p.parts.forEach(x => byKey[x.k] = {p, x}));
+const prodName = p => p.notes ? `${p.name} (${p.notes})` : p.name;
+const isFace = x => ['DOOR','FEND','TOE','DOORPANEL','DRAWERFRONT','TOESKIN'].includes(x.type.toUpperCase()) || /end panel|kick/i.test(x.name);
+function prodColour(p){
+  if (/benchtop/i.test(p.notes)) return css('--top');
+  if (/^Wall/.test(p.name)) return css('--clay');
+  return css('--oak');
+}
+
+/* ---------- 3D ---------- */
+const canvas = $('#gl');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(35, 1, 10, 60000);
+const controls = new THREE.OrbitControls(camera, canvas);
+controls.enableDamping = true;
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8a80, 0.85));
+const sun = new THREE.DirectionalLight(0xffffff, 0.55); sun.position.set(-2000, 4000, 5000); scene.add(sun);
+
+function partGeometry(x){
+  let g;
+  if (x.shape && x.shape.length >= 3 && !x.rad){
+    const s = new THREE.Shape(x.shape.map(([a,b]) => new THREE.Vector2(a,b)));
+    g = new THREE.ExtrudeGeometry(s, {depth:x.T, bevelEnabled:false});
+  } else {
+    const segs = x.rad ? 24 : 1;
+    g = new THREE.BoxGeometry(x.L, x.W, x.T, 1, segs, 1);
+    g.translate(x.L/2, x.W/2, x.T/2);
+    if (x.rad){
+      const R = x.rad, pos = g.attributes.position;
+      for (let i=0;i<pos.count;i++){
+        const y = pos.getY(i), z = pos.getZ(i), f = y / R, r = R - z;
+        pos.setY(i, r*Math.sin(f)); pos.setZ(i, R - r*Math.cos(f));
+      }
+      g.computeVertexNormals();
+    }
+  }
+  return g;
+}
+const meshes = [];
+DATA.products.forEach(p => p.parts.forEach(x => {
+  if (x.cutOnly) return;
+  const g = partGeometry(x);
+  const mat = new THREE.MeshLambertMaterial({color:0xffffff, transparent:true});
+  const m = new THREE.Mesh(g, mat);
+  const e = new THREE.LineSegments(new THREE.EdgesGeometry(g, 30), new THREE.LineBasicMaterial({color:0x000000, transparent:true}));
+  m.add(e);
+  const M = x.m, P = x.p, T = new THREE.Matrix4();
+  T.set(M[0],M[3],M[6],P[0], M[1],M[4],M[7],P[1], M[2],M[5],M[8],P[2], 0,0,0,1);
+  m.matrixAutoUpdate = false; m.matrix.copy(T);
+  m.userData = {p, x, edge:e}; scene.add(m); meshes.push(m);
+}));
+
+let state = {key:null, view:'part', room:DATA.rooms[0].n};
+function targets(sel){
+  if (!sel) return [];
+  const {p, x} = sel;
+  if (x.cutOnly) return meshes.filter(m => m.userData.p === p && m.userData.x.view && m.userData.x.name.startsWith(x.name));
+  return meshes.filter(m => m.userData.x === x);
+}
+function paint(){
+  const sel = state.key && byKey[state.key];
+  const hot = new Set(targets(sel));
+  const hi = new THREE.Color(css('--hi')), carcass = new THREE.Color(css('--carcass'));
+  meshes.forEach(m => {
+    m.visible = m.userData.p.room === state.room;
+    const {p, x, edge} = m.userData, mine = sel && p === sel.p;
+    const c = hot.has(m) ? hi : (isFace(x) ? new THREE.Color(prodColour(p)) : carcass);
+    m.material.color.copy(c);
+    const dim = sel && !mine && !hot.has(m);
+    m.material.opacity = hot.has(m) ? 1 : (dim ? 0.18 : (sel ? 0.38 : 1));
+    m.material.depthWrite = m.material.opacity === 1;
+    m.renderOrder = hot.has(m) ? 2 : 0;
+    edge.material.opacity = hot.has(m) ? 0.9 : (dim ? 0.06 : 0.35);
+  });
+}
+function frame(){
+  const sel = state.key && byKey[state.key];
+  const box = new THREE.Box3();
+  const list = (state.view === 'part' && sel) ? meshes.filter(m => m.userData.p === sel.p) : meshes.filter(m => m.userData.p.room === state.room);
+  list.forEach(m => { m.geometry.computeBoundingBox(); box.union(m.geometry.boundingBox.clone().applyMatrix4(m.matrix)); });
+  const c = box.getCenter(new THREE.Vector3()), s = box.getSize(new THREE.Vector3());
+  const r = Math.max(s.x, s.y, s.z) * 0.62 + 150;
+  const d = r / Math.tan(THREE.MathUtils.degToRad(camera.fov/2)) * (camera.aspect < 1 ? 1/camera.aspect : 1) * 0.95;
+  const dir = new THREE.Vector3(-0.42, 0.32, 1).normalize();
+  camera.position.copy(c).addScaledVector(dir, d);
+  controls.target.copy(c); controls.update();
+}
+function resize(){
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(() => { resize(); }).observe(canvas);
+(function loop(){ controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); })();
+
+/* ---------- elevation ---------- */
+function elevation(sel){
+  const RM = ROOMS[state.room], W = RM.wallLen, pad = 60;
+  const H = Math.min(RM.wallH, Math.max(...RM.products.map(p => p.Elev + p.H)) + 250);
+  const items = RM.products.slice().sort((a,b) => (a.D - b.D));
+  let s = `<svg viewBox="${-pad} ${-pad} ${W+2*pad} ${H+2*pad+120}" role="img" aria-label="Wall elevation">`;
+  s += `<rect x="0" y="0" width="${W}" height="${H}" style="fill:none;stroke:var(--line)" stroke-width="8"/>`;
+  items.forEach(p => {
+    const y = H - p.Elev - p.H, mine = sel && sel.p === p;
+    const fill = mine ? 'var(--hi)' : (/benchtop/i.test(p.notes) ? 'var(--top)' : (/^Wall/.test(p.name) ? 'var(--clay)' : 'var(--oak)'));
+    s += `<rect x="${p.X}" y="${y}" width="${p.W}" height="${p.H}" style="fill:${fill};stroke:var(--ink)" fill-opacity="${mine?1:.45}" stroke-opacity=".5" stroke-width="5"/>`;
+    if (p.numbered && p.H > 200 && p.W > 200) s += `<text x="${p.X+p.W/2}" y="${y+p.H/2}" font-size="90" text-anchor="middle" dominant-baseline="middle" style="fill:var(--ink)" font-family="JetBrains Mono, monospace">${p.mz || p.cab}</text>`;
+  });
+  s += `<line x1="0" y1="${H}" x2="${W}" y2="${H}" style="stroke:var(--ink)" stroke-width="10"/>`;
+  if (sel){ const p = sel.p;
+    s += `<text x="${Math.min(Math.max(p.X+p.W/2,500),W-500)}" y="${H+100}" font-size="90" text-anchor="middle" style="fill:var(--ink)" font-family="JetBrains Mono, monospace">${p.X} from left wall · ${p.W} wide</text>`; }
+  return s + `</svg>`;
+}
+
+/* ---------- page ---------- */
+const fmt = n => Math.round(n*10)/10;
+function show(key){
+  state.key = byKey[key] ? key : null;
+  const sel = state.key && byKey[state.key];
+  if (sel) state.room = sel.p.room;
+  $('#roomname').textContent = 'Room: ' + ROOMS[state.room].name;
+  const tag = $('#tag');
+  if (sel){
+    const {p, x} = sel;
+    tag.innerHTML = `<div class="cab">${p.label} · ${p.name}</div>
+      <h1>${x.name}</h1>
+      <p class="where">${p.notes ? p.notes + ' · ' : ''}${p.X} mm from the left wall${p.Elev ? ', ' + p.Elev + ' mm off the floor' : ''}</p>
+      <div class="dims">
+        <div><span>Length</span><b>${fmt(x.L)}</b></div>
+        <div><span>Width</span><b>${fmt(x.W)}</b></div>
+        <div><span>Thick</span><b>${x.T}</b></div>
+        <div><span>Cabinet W×H×D</span><b>${fmt(p.W)}×${fmt(p.H)}×${fmt(p.D)}</b></div>
+      </div>
+      ${x.comment ? `<p class="note">${x.comment}</p>` : ''}`;
+  } else {
+    tag.innerHTML = `<div class="cab">No part picked</div><h1>Scan a sticker, or pick a cabinet below</h1>
+      <p class="where">The part shows up in orange in the model and on the wall drawing.</p>`;
+  }
+  $('#elev').innerHTML = elevation(sel);
+  if (sel){ const e = $('#elev'), sc = e.scrollWidth / (ROOMS[state.room].wallLen + 120); e.scrollLeft = Math.max(0, (sel.p.X + sel.p.W/2 + 60) * sc - e.clientWidth/2); }
+  const p = sel ? sel.p : null;
+  $('#plistTitle').hidden = $('#plist').hidden = !p;
+  if (p) $('#plist').innerHTML = p.parts.filter(x => !x.view).map(x =>
+    `<a href="#${x.k}" data-k="${x.k}" aria-current="${x.k===state.key}"><span>${x.name}</span><small>${fmt(x.L)} × ${fmt(x.W)} × ${x.T}</small></a>`).join('');
+  $('#cabSel').value = p ? p.uid : '';
+  paint(); frame();
+}
+$('#plist').addEventListener('click', e => { const a = e.target.closest('a'); if (!a) return; e.preventDefault(); show(a.dataset.k); });
+$('#cabSel').innerHTML = '<option value="">Choose…</option>' + DATA.rooms.map(r => `<optgroup label="${r.name}">` + r.products.map(p => `<option value="${p.uid}">${p.label} · ${prodName(p)}</option>`).join('') + '</optgroup>').join('');
+$('#cabSel').addEventListener('change', e => { const p = DATA.products.find(q => q.uid === e.target.value); if (p) show(p.parts.find(x => !x.view).k); });
+function setView(v){ state.view = v; $('#vPart').setAttribute('aria-pressed', v==='part'); $('#vRoom').setAttribute('aria-pressed', v==='room'); frame(); }
+$('#vPart').onclick = () => setView('part'); $('#vRoom').onclick = () => setView('room');
+window.addEventListener('hashchange', () => show(location.hash.slice(1)));
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => show(state.key));
+resize(); show(location.hash.slice(1));
+</script>
+
+</body>
+</html>
