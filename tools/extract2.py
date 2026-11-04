@@ -52,8 +52,10 @@ def extract_room(path, rn):
         p['room']=rn; p['mz']=f"R{rn}{'C' if p['numbered'] else 'N'}{p['cab']}"
         p['label']=f"Cab {p['mz']}"
         for i,x in enumerate(p['parts']): x['k']=f"r{rn}c{p['id']}-p{i+1}"
-    w=room.find('Walls')[0]
-    return {'n':rn,'name':room.get('Name'),'wallLen':f(w.get('Len')),'wallH':f(w.get('Height')),'products':out}
+    ws=room.find('Walls'); w=ws[0] if ws is not None and len(ws) else None
+    wl=f(w.get('Len')) if w is not None else max([p['X']+p['W'] for p in out] or [1000])
+    wh=f(w.get('Height')) if w is not None else max([p['Elev']+p['H'] for p in out]+[2400])
+    return {'n':rn,'name':room.get('Name'),'wallLen':wl,'wallH':wh,'products':out}
 if __name__=='__main__':
     job,folder,outf=sys.argv[1:4]
     files=sorted([fn for fn in os.listdir(folder) if _re.fullmatch(r'Room[1-9]\d*\.des',fn)],key=lambda s:int(s[4:-4]))
