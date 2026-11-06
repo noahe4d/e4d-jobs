@@ -177,10 +177,29 @@ new ResizeObserver(() => { resize(); }).observe(canvas);
 (function loop(){ controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); })();
 
 /* ---------- elevation ---------- */
+function wallKey(sel){
+  const RM = ROOMS[state.room];
+  if (!RM.walls || Object.keys(RM.walls).length < 2 && !RM.products.some(p => p.side === 2)) return null;
+  if (sel && sel.p.wall) return sel.p.wall + '_' + sel.p.side;
+  const c = {}; RM.products.forEach(p => { if (p.wall){ const k = p.wall + '_' + p.side; c[k] = (c[k]||0) + 1; } });
+  return Object.keys(c).sort((a,b) => c[b] - c[a])[0] || null;
+}
+function elevLen(sel){
+  const RM = ROOMS[state.room], WK = wallKey(sel);
+  if (!WK || !RM.walls[WK.split('_')[0]]) return RM.wallLen;
+  return Math.max(RM.walls[WK.split('_')[0]].len, ...RM.products.filter(p => (p.wall + '_' + p.side) === WK).map(p => p.X + p.W));
+}
+function wallText(p){
+  const RM = ROOMS[p.room];
+  if (!p.wall || !RM.walls || (Object.keys(RM.walls).length < 2 && p.side !== 2)) return '';
+  return ` on wall ${p.wall}${p.side === 2 ? ' (back face)' : ''}`;
+}
 function elevation(sel){
-  const RM = ROOMS[state.room], W = RM.wallLen, pad = 60;
-  const H = Math.min(RM.wallH, Math.max(...RM.products.map(p => p.Elev + p.H)) + 250);
-  const items = RM.products.slice().sort((a,b) => (a.D - b.D));
+  const RM = ROOMS[state.room], pad = 60, WK = wallKey(sel);
+  const onWall = WK ? RM.products.filter(p => (p.wall + '_' + p.side) === WK) : RM.products;
+  const W = elevLen(sel);
+  const H = Math.min(RM.wallH, Math.max(...onWall.map(p => p.Elev + p.H)) + 250);
+  const items = onWall.slice().sort((a,b) => (a.D - b.D));
   let s = `<svg viewBox="${-pad} ${-pad} ${W+2*pad} ${H+2*pad+120}" role="img" aria-label="Wall elevation">`;
   s += `<rect x="0" y="0" width="${W}" height="${H}" style="fill:none;stroke:var(--line)" stroke-width="8"/>`;
   items.forEach(p => {
@@ -191,7 +210,7 @@ function elevation(sel){
   });
   s += `<line x1="0" y1="${H}" x2="${W}" y2="${H}" style="stroke:var(--ink)" stroke-width="10"/>`;
   if (sel){ const p = sel.p;
-    s += `<text x="${Math.min(Math.max(p.X+p.W/2,500),W-500)}" y="${H+100}" font-size="90" text-anchor="middle" style="fill:var(--ink)" font-family="JetBrains Mono, monospace">${p.X} from left wall · ${p.W} wide</text>`; }
+    s += `<text x="${Math.min(Math.max(p.X+p.W/2,500),W-500)}" y="${H+100}" font-size="90" text-anchor="middle" style="fill:var(--ink)" font-family="JetBrains Mono, monospace">${p.X} from left${wallText(p)} · ${p.W} wide</text>`; }
   return s + `</svg>`;
 }
 
@@ -207,7 +226,7 @@ function show(key){
     const {p, x} = sel;
     tag.innerHTML = `<div class="cab">${p.label} · ${p.name}</div>
       <h1>${x.name}</h1>
-      <p class="where">${p.notes ? p.notes + ' · ' : ''}${p.X} mm from the left wall${p.Elev ? ', ' + p.Elev + ' mm off the floor' : ''}</p>
+      <p class="where">${p.notes ? p.notes + ' · ' : ''}${p.X} mm from the left${wallText(p) || ' wall'}${p.Elev ? ', ' + p.Elev + ' mm off the floor' : ''}</p>
       <div class="dims">
         <div><span>Length</span><b>${fmt(x.L)}</b></div>
         <div><span>Width</span><b>${fmt(x.W)}</b></div>
@@ -220,7 +239,7 @@ function show(key){
       <p class="where">The part shows up in orange in the model and on the wall drawing.</p>`;
   }
   $('#elev').innerHTML = elevation(sel);
-  if (sel){ const e = $('#elev'), sc = e.scrollWidth / (ROOMS[state.room].wallLen + 120); e.scrollLeft = Math.max(0, (sel.p.X + sel.p.W/2 + 60) * sc - e.clientWidth/2); }
+  if (sel){ const e = $('#elev'), sc = e.scrollWidth / (elevLen(sel) + 120); e.scrollLeft = Math.max(0, (sel.p.X + sel.p.W/2 + 60) * sc - e.clientWidth/2); }
   const p = sel ? sel.p : null;
   $('#plistTitle').hidden = $('#plist').hidden = !p;
   if (p) $('#plist').innerHTML = p.parts.filter(x => !x.view).map(x =>
