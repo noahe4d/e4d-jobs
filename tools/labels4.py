@@ -95,8 +95,10 @@ for mat in mats:
             rows.append((mat,r,P,km,sw,sl,si,s,l))
 n=len(rows); qrs=[]
 for i,(mat,r,P,km,sw,sl,si,s,l) in enumerate(rows,1):
-    op=P[l.get('PartID')]; a=op.attrib; prod,rx=km[a['PartID']]
-    url=f"{URL}#{rx['k']}"; qrs.append(url)
+    op=P[l.get('PartID')]; a=op.attrib; # parts added by hand in the optimiser (no room part): cab as Mozaik gives it, QR to the job page
+    if a['PartID'] in km: prod,rx=km[a['PartID']]; url=f"{URL}#{rx['k']}"
+    else: prod={'mz':a['AssyNo'].strip(),'room':None,'roomname':'Added in optimiser'}; url=URL
+    qrs.append(url)
     cab=prod['mz']; tex=os.path.splitext(os.path.basename(a.get('TextureName','').replace('\\','/')))[0]
     c.setLineWidth(0.6); c.setDash(1,1.5); c.roundRect(3.5*mm,3.5*mm,W-7*mm,H-7*mm,6,stroke=1,fill=0); c.setDash()
     nm=a['Name']+((' '+a['OpeningLetter']) if a.get('OpeningLetter') else '')
@@ -110,7 +112,7 @@ for i,(mat,r,P,km,sw,sl,si,s,l) in enumerate(rows,1):
     else: et='Edge: none'
     c.setFont('Helvetica-Bold',fit(et,'Helvetica-Bold',7.5,46*mm)); c.drawRightString(W-6*mm,H-30*mm,et)
     job=f"Job: {d['job']}"; c.setFont('Helvetica-Bold',fit(job,'Helvetica-Bold',9,50*mm)); c.drawString(5*mm,H-22*mm,job)
-    c.setFont('Helvetica-Bold',8); rr=f"Room: {RNAME.get(prod.get('room',1),'')}"; c.setFont('Helvetica-Bold',fit(rr,'Helvetica-Bold',8,52*mm)); c.drawString(5*mm,H-27*mm,rr)
+    c.setFont('Helvetica-Bold',8); rr=f"Room: {prod.get('roomname') or RNAME.get(prod.get('room',1),'')}"; c.setFont('Helvetica-Bold',fit(rr,'Helvetica-Bold',8,52*mm)); c.drawString(5*mm,H-27*mm,rr)
     c.setFont('Helvetica',7); c.drawString(5*mm,H-31.5*mm,f"Material: {mat}")
     c.setFont('Helvetica',fit(f"Texture: {tex}",'Helvetica',8,50*mm)); c.drawString(5*mm,H-36*mm,f"Texture: {tex}")
     # bottom band: sheet layout | part drawing | QR
