@@ -142,11 +142,11 @@ dialog button.go{background:var(--hi);color:var(--hi-ink);border-color:var(--hi)
   <div class="btns"><button id="cNo">Cancel</button><button class="go" id="cYes">Untick</button></div>
 </dialog>
 
-<script src="../../checklist-config.js"></script>
+<script src="../../checklist-config.js?v=2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
 const $ = s => document.querySelector(s);
-const API = (window.E4D_CHECKLIST && window.E4D_CHECKLIST.url) || '';
+const API = (window.E4D_CHECKLIST && window.E4D_CHECKLIST.url) || 'https://e4d-checklist.noah-cbd.workers.dev/';
 const JOB = location.pathname.split('/').filter(Boolean).slice(-2, -1)[0]; // /e4d-jobs/<job>/checklist/
 const LISTS = {built:'Built', site:'Taken to site'};
 const ls = {
