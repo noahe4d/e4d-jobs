@@ -98,7 +98,10 @@ n=len(rows); qrs=[]
 for i,(mat,r,P,km,sw,sl,si,s,l) in enumerate(rows,1):
     op=P[l.get('PartID')]; a=op.attrib; # parts added by hand in the optimiser (no room part): cab as Mozaik gives it, QR to the job page
     if a['PartID'] in km: prod,rx=km[a['PartID']]; url=f"{URL}#{rx['k']}"
-    else: prod={'mz':a['AssyNo'].strip(),'room':None,'roomname':'Added in optimiser'}; url=URL
+    else:
+        mz0=a['AssyNo'].strip(); mz=mz0 if mz0.startswith('R') else (('R1'+mz0) if mz0.startswith('N') else 'R1C'+mz0)
+        own=[p for p in ALLP if p['mz']==mz]  # cab exists but the part changed since the nest (e.g. a recut of an old size): show its real room
+        prod=own[0] if own else {'mz':mz0,'room':None,'roomname':'Added in optimiser'}; url=URL
     qrs.append(url)
     cab=prod['mz']; tex=os.path.splitext(os.path.basename(a.get('TextureName','').replace('\\','/')))[0]
     c.setLineWidth(0.6); c.setDash(1,1.5); c.roundRect(3.5*mm,3.5*mm,W-7*mm,H-7*mm,6,stroke=1,fill=0); c.setDash()
