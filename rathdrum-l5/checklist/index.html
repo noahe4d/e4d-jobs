@@ -116,7 +116,8 @@ dialog button.go{background:var(--hi);color:var(--hi-ink);border-color:var(--hi)
     </div>
     <select id="roomSel" aria-label="Room"></select>
   </div>
-  <div class="row"><label>Scanning as</label><b id="who">—</b><button class="cabbtn" id="whoBtn" style="margin:0">Change</button></div>
+  <div class="row"><label>Scanning as</label><b id="who">—</b><button class="cabbtn" id="whoBtn" style="margin:0">Change</button>
+    <button class="cabbtn" id="xlBtn" style="margin:0 0 0 auto">Download for Excel</button></div>
   <div id="list"></div>
 </div>
 
@@ -265,6 +266,21 @@ $('#m-part').onclick = () => { ui.mode = 'part'; ls.set('e4d-mode', 'part'); ren
 document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { ui.f = b.dataset.f; render(); });
 $('#roomSel').onchange = e => { ui.room = e.target.value; render(); };
 $('#whoBtn').onclick = () => { who = ''; needWho(); };
+
+/* ---------- Excel download: one row per part, built + on site ---------- */
+$('#xlBtn').onclick = () => {
+  const q = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const dt = s => s ? new Date(s.t).toLocaleString('en-AU') : '';
+  const rows = [['Job','Room','Cabinet','Cabinet name','Part','L','W','T','Built','Built by','Built at','On site','Taken by','Taken at']];
+  DATA.rooms.forEach(r => CABS.filter(c => c.room === r.n).forEach(c => c.keys.forEach(k => {
+    const x = PART[k].x, b = STATE.built[k], s = STATE.site[k];
+    rows.push([DATA.job, r.name, c.mz, c.name, x.name.trim(), fmt(x.L), fmt(x.W), x.T, b ? 'Yes' : 'No', b && b.w, dt(b), s ? 'Yes' : 'No', s && s.w, dt(s)]);
+  })));
+  const blob = new Blob(['\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n')], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = DATA.job.replace(/[^\w -]+/g, '') + ' checklist ' + new Date().toLocaleDateString('en-CA') + '.csv';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+};
 
 /* ---------- scanner ---------- */
 let stream = null, det = null, busy = false, lastCode = '', lastAt = 0, cvs = document.createElement('canvas'), ctx = cvs.getContext('2d', {willReadFrequently:true});
