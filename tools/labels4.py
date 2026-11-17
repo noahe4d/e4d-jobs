@@ -1,4 +1,4 @@
-import json, math, os, qrcode, sys
+import json, math, os, qrcode, re, sys
 from reportlab.pdfgen import canvas
 from reportlab.lib.units import mm
 from reportlab.lib.utils import ImageReader
@@ -16,7 +16,8 @@ def keymap(r,mat):
     for op in r.findall('OptimizePart'):
         a=op.attrib; assy=a['AssyNo']; mz=assy if assy.startswith('R') else (('R1'+assy) if assy.startswith('N') else 'R1C'+assy)
         L,W=float(a['Length']),float(a['Width'])
-        c=[(p,x) for p in ALLP if p['mz']==mz for x in p['parts'] if not x['view'] and x['k'] not in used and x['rep']==a['Name']]
+        nm=re.sub(r'^\s*Recut\s+\S+\s+','',a['Name']).strip()  # recuts renamed in the optimiser: "Recut <colour> Door(R)"
+        c=[(p,x) for p in ALLP if p['mz']==mz for x in p['parts'] if not x['view'] and x['k'] not in used and (x['rep']==a['Name'] or x['rep'].strip()==nm)]
         if not c: continue
         sc=lambda px: min(abs(px[1]['L']-L)+abs(px[1]['W']-W), abs(px[1]['L']-W)+abs(px[1]['W']-L))
         b=min(c,key=sc); used.add(b[1]['k']); m[a['PartID']]=(b[0],b[1])
