@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Checklist</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Same look as the job page: workshop tag colours, one column, big touch targets. */
+:root{
+  --bg:#eceeea; --panel:#ffffff; --ink:#1c2220; --muted:#5d6763; --line:#cfd4cf;
+  --hi:#e8590c; --hi-ink:#ffffff; --ok:#2f8f46; --ok-soft:#dcefe0; --warn:#b7791f;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root{
+  --bg:#151917; --panel:#1f2522; --ink:#e9ece8; --muted:#9aa49f; --line:#333b37;
+  --hi:#ff7a2e; --hi-ink:#1a0d04; --ok:#4cc26a; --ok-soft:#1d3324; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink);margin:0}
+body{font-family:var(--body);font-size:16px;line-height:1.45;
+  padding-left:max(14px,env(safe-area-inset-left,0px));padding-right:max(14px,env(safe-area-inset-right,0px));padding-block:12px 120px}
+.wrap{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:12px}
+.job{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap;
+  font-family:var(--mono);font-size:12px;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.job a{color:var(--hi);text-decoration:none;font-weight:600}
+h1{font-family:var(--display);font-weight:700;font-size:32px;line-height:1.05;margin:0}
+.tabs{display:grid;grid-template-columns:1fr 1fr;background:var(--panel);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.tabs button{font:700 18px var(--display);letter-spacing:.06em;text-transform:uppercase;border:0;background:none;color:var(--ink);padding:14px 8px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg)}
+.card{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--hi);border-radius:6px;padding:12px 14px;display:flex;flex-direction:column;gap:8px}
+.prog{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-family:var(--mono);font-size:14px;font-variant-numeric:tabular-nums}
+.bar{height:10px;border-radius:5px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+.sync{font-size:13px;color:var(--muted);margin:0}
+.sync.warn{color:var(--warn);font-weight:600}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row label{font-size:13px;color:var(--muted)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.seg button{font:600 14px var(--body);border:0;background:none;color:var(--ink);padding:8px 11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+select,input[type=text]{font:500 15px var(--body);padding:8px;border-radius:6px;border:1px solid var(--line);background:var(--panel);color:var(--ink);min-width:0}
+button:focus-visible,select:focus-visible,a:focus-visible,input:focus-visible{outline:3px solid var(--hi);outline-offset:2px}
+.room h2{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.04em;text-transform:uppercase;margin:10px 0 6px}
+.cabs{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--panel)}
+.cab{border-top:1px solid var(--line)}
+.cab:first-child{border-top:0}
+.cabhead{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:10px 12px;cursor:pointer}
+.dot{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:15px;font-weight:700;color:#fff}
+.cab.done .dot{background:var(--ok);border-color:var(--ok)}
+.cab.part .dot{border-color:var(--ok);background:conic-gradient(var(--ok) var(--pc),transparent 0)}
+.cab.done .cabhead{background:var(--ok-soft)}
+.cabhead b{font-family:var(--mono);font-weight:600;font-size:14px}
+.cabhead span{display:block;font-size:14px;color:var(--muted);overflow:hidden;text-overflow:ellipsis}
+.cabhead small{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.plist{display:none;padding:0 12px 10px 48px}
+.cab.open .plist{display:block}
+.p{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:start;padding:7px 0;border-top:1px dashed var(--line);cursor:pointer;font-size:15px}
+.p .tick{width:20px;height:20px;border-radius:4px;border:2px solid var(--line);margin-top:2px;display:grid;place-items:center;color:#fff;font-size:13px;font-weight:700}
+.p.on .tick{background:var(--ok);border-color:var(--ok)}
+.p small{display:block;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.cabbtn{font:600 14px var(--body);border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:6px;padding:8px 12px;margin-top:8px;cursor:pointer}
+.scanbtn{position:fixed;left:50%;transform:translateX(-50%);bottom:max(16px,env(safe-area-inset-bottom,0px));
+  font:700 22px var(--display);letter-spacing:.08em;text-transform:uppercase;background:var(--hi);color:var(--hi-ink);
+  border:0;border-radius:40px;padding:16px 38px;box-shadow:0 6px 20px rgba(0,0,0,.25);cursor:pointer;z-index:5}
+.empty{color:var(--muted);text-align:center;padding:20px}
+/* scanner */
+#scan{position:fixed;inset:0;background:#000;z-index:10;display:none;flex-direction:column}
+#scan.on{display:flex}
+#scan video{flex:1;width:100%;object-fit:cover;min-height:0}
+#scan .frame{position:absolute;left:50%;top:42%;width:min(70vw,320px);aspect-ratio:1;transform:translate(-50%,-50%);border:3px solid rgba(255,255,255,.8);border-radius:14px;pointer-events:none}
+#scan .top{position:absolute;top:0;left:0;right:0;padding:max(14px,env(safe-area-inset-top,0px)) 14px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;color:#fff;
+  background:linear-gradient(rgba(0,0,0,.65),transparent);font:700 20px var(--display);letter-spacing:.06em;text-transform:uppercase}
+#scan .top button{font:600 16px var(--body);background:#fff;color:#000;border:0;border-radius:20px;padding:8px 16px;cursor:pointer}
+#scanmsg{position:absolute;left:12px;right:12px;bottom:max(18px,env(safe-area-inset-bottom,0px));border-radius:10px;padding:14px 16px;background:rgba(0,0,0,.75);color:#fff;font-size:17px;min-height:56px}
+#scanmsg.good{background:var(--ok)}
+#scanmsg.same{background:#3d4a44}
+#scanmsg.bad{background:#b42318}
+#scanmsg b{display:block;font:700 22px var(--display);letter-spacing:.03em}
+dialog{border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);padding:18px;max-width:340px;width:calc(100% - 32px)}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 8px;font-family:var(--display);font-size:24px}
+dialog input{width:100%;margin:6px 0 12px}
+dialog .btns{display:flex;gap:8px;justify-content:flex-end}
+dialog button{font:600 15px var(--body);border-radius:6px;padding:9px 14px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+dialog button.go{background:var(--hi);color:var(--hi-ink);border-color:var(--hi)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="job"><span id="jobname">Loading…</span><a id="back" href="../">3D job page →</a></div>
+  <h1>Checklist</h1>
+  <div class="tabs" role="tablist">
+    <button role="tab" id="t-built" data-list="built" aria-selected="true">Built</button>
+    <button role="tab" id="t-site" data-list="site" aria-selected="false">Taken to site</button>
+  </div>
+  <section class="card" aria-live="polite">
+    <div class="prog"><span id="pcab"></span><span id="ppart"></span></div>
+    <div class="bar"><i id="pbar"></i></div>
+    <p class="sync" id="sync"></p>
+  </section>
+  <div class="row">
+    <label>Each scan ticks</label>
+    <div class="seg" role="group" aria-label="Each scan ticks">
+      <button id="m-cab" aria-pressed="true">Whole cabinet</button>
+      <button id="m-part" aria-pressed="false">Just that part</button>
+    </div>
+  </div>
+  <div class="row">
+    <div class="seg" role="group" aria-label="Show">
+      <button data-f="todo" aria-pressed="true">Still to do</button>
+      <button data-f="done" aria-pressed="false">Done</button>
+      <button data-f="all" aria-pressed="false">All</button>
+    </div>
+    <select id="roomSel" aria-label="Room"></select>
+  </div>
+  <div class="row"><label>Scanning as</label><b id="who">—</b><button class="cabbtn" id="whoBtn" style="margin:0">Change</button>
+    <button class="cabbtn" id="xlBtn" style="margin:0 0 0 auto">Download for Excel</button></div>
+  <div id="list"></div>
+</div>
+
+<button class="scanbtn" id="scanBtn">Scan</button>
+
+<div id="scan" aria-modal="true" role="dialog" aria-label="Scanner">
+  <video id="vid" playsinline muted></video>
+  <div class="frame"></div>
+  <div class="top"><span id="scanTitle">Scanning: Built</span><button id="scanClose">Done</button></div>
+  <div id="scanmsg">Point the camera at a sticker's QR code</div>
+</div>
+
+<dialog id="whoDlg">
+  <h3>Who's scanning?</h3>
+  <p class="sync" style="margin:0">Your name is saved with every tick so the office can see who did it.</p>
+  <input type="text" id="whoIn" autocomplete="name" placeholder="Your name">
+  <div class="btns"><button class="go" id="whoOk">Save</button></div>
+</dialog>
+<dialog id="confirmDlg">
+  <h3 id="cTitle"></h3>
+  <p id="cBody" style="margin:0 0 14px"></p>
+  <div class="btns"><button id="cNo">Cancel</button><button class="go" id="cYes">Untick</button></div>
+</dialog>
+
+<script src="../../checklist-config.js?v=2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+const $ = s => document.querySelector(s);
+const API = (window.E4D_CHECKLIST && window.E4D_CHECKLIST.url) || 'https://e4d-checklist.noah-cbd.workers.dev/';
+const JOB = location.pathname.split('/').filter(Boolean).slice(-2, -1)[0]; // /e4d-jobs/<job>/checklist/
+const LISTS = {built:'Built', site:'Taken to site'};
+const ls = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+const K = n => `e4d-${n}-${JOB}`;
+let DATA, CABS = [], PART = {};
+let ui = {list: ls.get('e4d-list', 'built'), mode: ls.get('e4d-mode', 'cab'), f: 'todo', room: '', open: new Set()};
+let server = ls.get(K('server'), []);   // rows from the shared sheet: [time, list, key, on, who]
+let queue = ls.get(K('queue'), []);     // ticks not yet sent
+let who = ls.get('e4d-who', '');
+let lastSync = 0, syncErr = '';
+
+/* ---------- state: last tick per list + part wins ---------- */
+let STATE = {};
+function rebuild(){
+  STATE = {built:{}, site:{}};
+  const all = server.concat(queue.map(e => [e.t, e.list, e.key, e.on, e.who]));
+  all.sort((a, b) => a[0] - b[0]);
+  for (const [t, list, key, on, w] of all){ if (!STATE[list]) continue; if (on) STATE[list][key] = {t, w}; else delete STATE[list][key]; }
+}
+function tick(keys, on){
+  const t = Date.now();
+  keys.forEach((key, i) => queue.push({id: t + '-' + i + '-' + Math.random().toString(36).slice(2,7), t: t + i, job: JOB, list: ui.list, key, on, who}));
+  ls.set(K('queue'), queue); rebuild(); render(); sync();
+}
+
+/* ---------- shared sheet ---------- */
+async function sync(){
+  if (!API) { render(); return; }
+  try{
+    if (queue.length){
+      const send = queue.slice();
+      const r = await fetch(API, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({job: JOB, ev: send})});
+      const j = await r.json(); if (!j.ok) throw new Error(j.error || 'save failed');
+      const ids = new Set(send.map(e => e.id));
+      queue = queue.filter(e => !ids.has(e.id)); ls.set(K('queue'), queue);
+      send.forEach(e => server.push([e.t, e.list, e.key, e.on, e.who]));
+    }
+    const r = await fetch(API + '?job=' + encodeURIComponent(JOB) + '&_=' + Date.now());
+    const j = await r.json(); if (!j.ok) throw new Error(j.error || 'load failed');
+    server = j.rows; ls.set(K('server'), server);
+    lastSync = Date.now(); syncErr = '';
+  }catch(e){ syncErr = navigator.onLine === false ? 'offline' : 'error'; }
+  rebuild(); render();
+}
+setInterval(() => { if (document.visibilityState === 'visible') sync(); }, 20000);
+addEventListener('online', sync);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') sync(); });
+
+/* ---------- page ---------- */
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const when = t => { const d = new Date(t), n = new Date(); const hm = d.toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+  return d.toDateString() === n.toDateString() ? hm : d.toLocaleDateString([], {day:'numeric', month:'short'}) + ' ' + hm; };
+const fmt = n => Math.round(n*10)/10;
+function render(){
+  if (!DATA) return;
+  document.querySelectorAll('.tabs button').forEach(b => b.setAttribute('aria-selected', b.dataset.list === ui.list));
+  $('#m-cab').setAttribute('aria-pressed', ui.mode === 'cab'); $('#m-part').setAttribute('aria-pressed', ui.mode === 'part');
+  document.querySelectorAll('[data-f]').forEach(b => b.setAttribute('aria-pressed', b.dataset.f === ui.f));
+  $('#who').textContent = who || 'not set';
+  const S = STATE[ui.list] || {};
+  let pd = 0, pt = 0, cd = 0;
+  CABS.forEach(c => { c.n = c.keys.filter(k => S[k]).length; pd += c.n; pt += c.keys.length; if (c.n === c.keys.length) cd++; });
+  $('#pcab').textContent = `Cabinets ${cd} / ${CABS.length}`;
+  $('#ppart').textContent = `Parts ${pd} / ${pt}`;
+  $('#pbar').style.width = (pt ? 100 * pd / pt : 0) + '%';
+  const s = $('#sync');
+  s.className = 'sync';
+  if (!API){ s.textContent = 'Not linked to the shared sheet yet: ticks are only saved on this phone.'; s.classList.add('warn'); }
+  else if (queue.length){ s.textContent = `${queue.length} tick${queue.length>1?'s':''} waiting to send${syncErr==='offline'?' (no signal, will send when back online)':syncErr?' (couldn’t reach the sheet, retrying)':''}`; s.classList.add('warn'); }
+  else if (syncErr){ s.textContent = 'Couldn’t reach the shared sheet, showing the last copy. Retrying.'; s.classList.add('warn'); }
+  else s.textContent = lastSync ? `All saved · updated ${when(lastSync)}` : 'Loading ticks…';
+  let html = '';
+  DATA.rooms.forEach(r => {
+    if (ui.room && String(r.n) !== ui.room) return;
+    const cabs = CABS.filter(c => c.room === r.n && (ui.f === 'all' || (ui.f === 'done' ? c.n === c.keys.length : c.n < c.keys.length)));
+    if (!cabs.length) return;
+    html += `<section class="room"><h2>${esc(r.name)}</h2><div class="cabs">` + cabs.map(c => {
+      const done = c.n === c.keys.length, part = !done && c.n > 0, open = ui.open.has(c.uid);
+      return `<div class="cab${done?' done':''}${part?' part':''}${open?' open':''}" data-uid="${c.uid}" style="--pc:${Math.round(100*c.n/c.keys.length)}%">
+        <div class="cabhead" role="button" tabindex="0" aria-expanded="${open}"><div class="dot">${done?'✓':''}</div>
+          <div><b>${esc(c.mz)}</b><span>${esc(c.name)}</span></div><small>${c.n}/${c.keys.length}</small></div>
+        <div class="plist">${c.keys.map(k => { const x = PART[k].x, st = S[k];
+          return `<div class="p${st?' on':''}" data-k="${k}" role="checkbox" aria-checked="${!!st}" tabindex="0"><div class="tick">${st?'✓':''}</div>
+            <div>${esc(x.name)}<small>${fmt(x.L)} × ${fmt(x.W)} × ${x.T}${st ? ` · ${esc(st.w || '?')} ${when(st.t)}` : ''}</small></div></div>`; }).join('')}
+          <button class="cabbtn" data-all="${c.uid}">${done ? 'Untick whole cabinet' : 'Tick whole cabinet'}</button></div></div>`;
+    }).join('') + `</div></section>`;
+  });
+  $('#list').innerHTML = html || `<p class="empty">${ui.f === 'todo' ? 'Everything here is ticked.' : 'Nothing ticked yet.'}</p>`;
+}
+function ask(title, body){ return new Promise(res => { $('#cTitle').textContent = title; $('#cBody').textContent = body;
+  const d = $('#confirmDlg'); $('#cYes').onclick = () => { d.close(); res(true); }; $('#cNo').onclick = () => { d.close(); res(false); }; d.showModal(); }); }
+function needWho(){ return new Promise(res => { if (who) return res(true);
+  const d = $('#whoDlg'); $('#whoIn').value = ''; d.showModal();
+  $('#whoOk').onclick = () => { const v = $('#whoIn').value.trim(); if (!v) return; who = v; ls.set('e4d-who', who); d.close(); render(); res(true); }; }); }
+
+$('#list').addEventListener('click', async e => {
+  const all = e.target.closest('[data-all]');
+  if (all){ const c = CABS.find(c => c.uid === all.dataset.all), S = STATE[ui.list], done = c.n === c.keys.length;
+    if (done){ if (await ask('Untick ' + c.mz + '?', `All ${c.keys.length} parts come off the ${LISTS[ui.list]} list.`)) tick(c.keys, false); }
+    else { if (!await needWho()) return; tick(c.keys.filter(k => !S[k]), true); }
+    return; }
+  const p = e.target.closest('.p');
+  if (p){ const k = p.dataset.k, on = !!STATE[ui.list][k];
+    if (on){ if (await ask('Untick this part?', PART[k].x.name + ' (' + PART[k].c.mz + ') comes off the ' + LISTS[ui.list] + ' list.')) tick([k], false); }
+    else { if (!await needWho()) return; tick([k], true); }
+    return; }
+  const h = e.target.closest('.cabhead');
+  if (h){ const uid = h.parentElement.dataset.uid; ui.open.has(uid) ? ui.open.delete(uid) : ui.open.add(uid); render(); }
+});
+$('#list').addEventListener('keydown', e => { if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.cabhead,.p')){ e.preventDefault(); e.target.click(); } });
+document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => { ui.list = b.dataset.list; ls.set('e4d-list', ui.list); render(); });
+$('#m-cab').onclick = () => { ui.mode = 'cab'; ls.set('e4d-mode', 'cab'); render(); };
+$('#m-part').onclick = () => { ui.mode = 'part'; ls.set('e4d-mode', 'part'); render(); };
+document.querySelectorAll('[data-f]').forEach(b => b.onclick = () => { ui.f = b.dataset.f; render(); });
+$('#roomSel').onchange = e => { ui.room = e.target.value; render(); };
+$('#whoBtn').onclick = () => { who = ''; needWho(); };
+
+/* ---------- Excel download: one row per part, built + on site ---------- */
+$('#xlBtn').onclick = () => {
+  const q = v => { v = v == null ? '' : String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  const dt = s => s ? new Date(s.t).toLocaleString('en-AU') : '';
+  const rows = [['Job','Room','Cabinet','Cabinet name','Part','L','W','T','Built','Built by','Built at','On site','Taken by','Taken at']];
+  DATA.rooms.forEach(r => CABS.filter(c => c.room === r.n).forEach(c => c.keys.forEach(k => {
+    const x = PART[k].x, b = STATE.built[k], s = STATE.site[k];
+    rows.push([DATA.job, r.name, c.mz, c.name, x.name.trim(), fmt(x.L), fmt(x.W), x.T, b ? 'Yes' : 'No', b && b.w, dt(b), s ? 'Yes' : 'No', s && s.w, dt(s)]);
+  })));
+  const blob = new Blob(['\ufeff' + rows.map(r => r.map(q).join(',')).join('\r\n')], {type:'text/csv'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = DATA.job.replace(/[^\w -]+/g, '') + ' checklist ' + new Date().toLocaleDateString('en-CA') + '.csv';
+  document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+};
+
+/* ---------- scanner ---------- */
+let stream = null, det = null, busy = false, lastCode = '', lastAt = 0, cvs = document.createElement('canvas'), ctx = cvs.getContext('2d', {willReadFrequently:true});
+if ('BarcodeDetector' in window){ BarcodeDetector.getSupportedFormats().then(f => { if (f.includes('qr_code')) det = new BarcodeDetector({formats:['qr_code']}); }).catch(() => {}); }
+function msg(cls, title, text){ const m = $('#scanmsg'); m.className = cls; m.innerHTML = (title ? `<b>${esc(title)}</b>` : '') + esc(text || ''); }
+function beep(ok){ try{ navigator.vibrate && navigator.vibrate(ok ? 80 : [60,60,60]);
+  const a = new (window.AudioContext || window.webkitAudioContext)(), o = a.createOscillator(), g = a.createGain();
+  o.frequency.value = ok ? 1200 : 300; g.gain.value = .15; o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + (ok ? .09 : .25)); setTimeout(() => a.close(), 400); }catch(e){} }
+function handle(text){
+  let u; try{ u = new URL(text); }catch(e){ msg('bad', 'Not one of our stickers', ''); beep(false); return; }
+  const m = u.pathname.match(/\/e4d-jobs\/([^/]+)/);
+  if (!m){ msg('bad', 'Not one of our stickers', ''); beep(false); return; }
+  if (m[1] !== JOB){ msg('bad', 'Wrong job', 'This sticker is for ' + m[1].replace(/-/g, ' ') + '.'); beep(false); return; }
+  const k = u.hash.slice(1);
+  if (!PART[k]){ msg('bad', 'Sticker not linked to a part', 'Added or recut part: tick it by hand in the list.'); beep(false); return; }
+  const {x, c} = PART[k], S = STATE[ui.list];
+  const keys = ui.mode === 'cab' ? c.keys : [k];
+  const fresh = keys.filter(q => !S[q]);
+  const what = ui.mode === 'cab' ? `${c.mz} · whole cabinet (${c.keys.length} parts)` : `${c.mz} · ${x.name}`;
+  if (!fresh.length){ msg('same', 'Already ticked', what); beep(true); return; }
+  tick(fresh, true);
+  msg('good', '✓ ' + LISTS[ui.list], what); beep(true);
+}
+async function loop(){
+  if (!stream) return;
+  const v = $('#vid');
+  if (!busy && v.readyState >= 2){
+    busy = true;
+    try{
+      let code = null;
+      if (det){ const r = await det.detect(v); if (r.length) code = r[0].rawValue; }
+      else if (window.jsQR){
+        const s = Math.min(1, 720 / Math.max(v.videoWidth, v.videoHeight));
+        cvs.width = v.videoWidth * s; cvs.height = v.videoHeight * s; ctx.drawImage(v, 0, 0, cvs.width, cvs.height);
+        const r = jsQR(ctx.getImageData(0, 0, cvs.width, cvs.height).data, cvs.width, cvs.height, {inversionAttempts:'dontInvert'});
+        if (r) code = r.data;
+      }
+      const now = Date.now();
+      if (code && (code !== lastCode || now - lastAt > 4000)){ lastCode = code; lastAt = now; handle(code); }
+    }catch(e){}
+    busy = false;
+  }
+  setTimeout(loop, 120);
+}
+async function openScan(){
+  if (!await needWho()) return;
+  $('#scanTitle').textContent = 'Scanning: ' + LISTS[ui.list] + (ui.mode === 'cab' ? ' · whole cabinet' : ' · one part');
+  msg('', '', 'Point the camera at a sticker’s QR code');
+  $('#scan').classList.add('on');
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}, width:{ideal:1280}, height:{ideal:720}}, audio:false});
+    const v = $('#vid'); v.srcObject = stream; await v.play(); loop();
+  }catch(e){ msg('bad', 'Camera blocked', 'Allow the camera for this page in your browser settings, then try again.'); }
+}
+function closeScan(){ if (stream){ stream.getTracks().forEach(t => t.stop()); stream = null; } $('#scan').classList.remove('on'); render(); }
+$('#scanBtn').onclick = openScan; $('#scanClose').onclick = closeScan;
+
+/* ---------- load the job's parts from its 3D page ---------- */
+(async () => {
+  try{
+    const t = await (await fetch('../index.html', {cache:'no-cache'})).text();
+    const i = t.indexOf('const DATA = ') + 13, j = t.indexOf(';\nconst $', i);
+    DATA = JSON.parse(t.slice(i, j));
+  }catch(e){ $('#list').innerHTML = '<p class="empty">Couldn’t load this job’s parts. Check the connection and reload.</p>'; return; }
+  document.title = 'Checklist · ' + DATA.job; $('#jobname').textContent = DATA.job;
+  DATA.rooms.forEach(r => r.products.forEach(p => {
+    const parts = p.parts.filter(x => !x.view); if (!parts.length) return;
+    const c = {uid: r.n + '-' + p.id, room: r.n, mz: p.mz || p.label, name: p.notes ? `${p.name} (${p.notes})` : p.name, keys: parts.map(x => x.k)};
+    parts.forEach(x => PART[x.k] = {x, c}); CABS.push(c);
+  }));
+  $('#roomSel').innerHTML = '<option value="">All rooms</option>' + DATA.rooms.map(r => `<option value="${r.n}">${esc(r.name)}</option>`).join('');
+  rebuild(); render(); sync();
+})();
+</script>
+</body>
+</html>
